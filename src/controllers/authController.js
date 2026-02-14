@@ -45,7 +45,7 @@ module.exports.generateInvoice = generateInvoice;
 const login = async (req, res) => {
   try {
     const { mobile, password } = req.body;
-console.log("Login attempt:", { mobile, password: password ? "****" : null });
+// console.log("Login attempt:", { mobile, password: password ? "****" : null });
     if (!mobile || !password) {
       return res.status(400).json({
         success: false,
@@ -200,7 +200,7 @@ const createNewUser = async (req, res) => {
       supervisor_mobile,
       father_name
     } = req.body;
-      console.log("Creating new user with data:", req.body);
+      // console.log("Creating new user with data:", req.body);
     const result = await pool.query(
       `SELECT public.sp_mb_create_new_user(
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16
@@ -224,7 +224,7 @@ const createNewUser = async (req, res) => {
         father_name
       ]
     );
-    console.log("Create new user result:", result);
+    // console.log("Create new user result:", result);
     return res.json(result.rows[0].sp_mb_create_new_user);
 
   } catch (error) {
@@ -362,11 +362,11 @@ const getAllProducts = async (req, res) => {
 };
 
 const addProductToCart = async (req, res) => {
-  console.log("ADD TO CART REQ:", req.body);
+  // console.log("ADD TO CART REQ:", req.body);
   try {
     const { mobile_number, product_id, quantity } = req.body;
 
-    console.log("ADD TO CART REQ:", req.body);
+    // console.log("ADD TO CART REQ:", req.body);
 
     if (!mobile_number || !product_id || quantity == null) {
       return res.status(400).json({
@@ -383,7 +383,7 @@ const addProductToCart = async (req, res) => {
         Number(quantity),
       ]
     );
-console.log("ADD TO CART REQ:", res.body);
+// console.log("ADD TO CART REQ:", res.body);
     return res.status(200).json(rows[0].sp_mb_cart_add_product);
 
   } catch (error) {
@@ -428,8 +428,6 @@ const viewCartItems = async (req, res) => {
   }
 };
 
-
-
 const updateCartQuantity = async (req, res) => {
   try {
     const { mobile_number, product_id, quantity } = req.body;
@@ -457,7 +455,6 @@ const updateCartQuantity = async (req, res) => {
     });
   }
 };
-
 
 const deleteCartItem = async (req, res) => {
   try {
@@ -593,7 +590,7 @@ const transferCoin = async (req, res) => {
 const getUserDetails = async (req, res) => {
   try {
     const { mobile } = req.body;
-    console.log(req.body);
+    // console.log(req.body);
     if (!mobile) {
       return res.status(400).json({
         success: false,
@@ -610,7 +607,7 @@ const getUserDetails = async (req, res) => {
     const { rows } = await pool.query(query, values);
 
     const result = rows[0];
-    console.log(res.json(result));
+    // console.log(res.json(result));
     return res.json(result);
 
   } catch (error) {
@@ -622,8 +619,6 @@ const getUserDetails = async (req, res) => {
     });
   }
 };
-
-
 
 
 module.exports = {

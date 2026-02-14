@@ -25,7 +25,7 @@ app.get("/db-test", async (req, res) => {
 //   methods: ["GET", "POST", "PUT", "DELETE"],
 //   allowedHeaders: ["Content-Type"],
 // }));
-const cors = require('cors');
+
 
 app.use(cors({
   origin: [
