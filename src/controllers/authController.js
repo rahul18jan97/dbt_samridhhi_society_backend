@@ -231,7 +231,7 @@ const createNewUser = async (req, res) => {
     console.error("Create User Error:", error);
     return res.status(500).json({
       status: false,
-      message: "Server error"
+      message: error
     });
   }
 };
