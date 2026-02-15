@@ -22,7 +22,8 @@ const {
   generateInvoice,
   searchMembers,
   transferCoin,
-  getUserDetails
+  getUserDetails,
+  getHistory
 } = require("../controllers/authController");
 
 router.post("/login", login);
@@ -44,6 +45,8 @@ router.post("/generate-invoice", generateInvoice);
 router.post("/search-members", searchMembers);
 router.post("/transfer-coin", transferCoin);
 router.post("/user-details", getUserDetails);
+router.post("/get-history", getHistory);
+
 
 
 

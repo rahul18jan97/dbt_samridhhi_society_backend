@@ -20,21 +20,21 @@ app.get("/db-test", async (req, res) => {
   }
 });
 
-// app.use(cors({
-//   origin: "*",
-//   methods: ["GET", "POST", "PUT", "DELETE"],
-//   allowedHeaders: ["Content-Type"],
-// }));
-
-
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://dbtsamridhhisociety.netlify.app"
-  ],
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
+  allowedHeaders: ["Content-Type"],
 }));
+
+
+// app.use(cors({
+//   origin: [
+//     "http://localhost:3000",
+//     "https://dbtsamridhhisociety.netlify.app"
+//   ],
+//   methods: ["GET", "POST", "PUT", "DELETE"],
+//   credentials: true
+// }));
 
 app.use(express.json());
 

@@ -181,6 +181,7 @@ const banners = async (req, res) => {
 };
 
 const createNewUser = async (req, res) => {
+  console.error("Create User Error:", req);
   try {
     const {
       full_name,
@@ -195,12 +196,12 @@ const createNewUser = async (req, res) => {
       city,
       state,
       lat,
-      long,
+      long: longitude,
       supervisor_name,
       supervisor_mobile,
       father_name
     } = req.body;
-      // console.log("Creating new user with data:", req.body);
+
     const result = await pool.query(
       `SELECT public.sp_mb_create_new_user(
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16
@@ -218,23 +219,79 @@ const createNewUser = async (req, res) => {
         city,
         state,
         lat,
-        long,
+        longitude,
         supervisor_name,
-        supervisor_mobile,
+        supervisor_mobile || null,
         father_name
       ]
     );
-    // console.log("Create new user result:", result);
+      console.error("Create User Error:", res);
     return res.json(result.rows[0].sp_mb_create_new_user);
 
   } catch (error) {
     console.error("Create User Error:", error);
     return res.status(500).json({
       status: false,
-      message: error
+      message: error.message
     });
   }
 };
+
+// const createNewUser = async (req, res) => {
+//   try {
+//     const {
+//       full_name,
+//       mobile_number,
+//       password,
+//       role,
+//       type,
+//       email,
+//       area,
+//       address,
+//       pin_code,
+//       city,
+//       state,
+//       lat,
+//       long,
+//       supervisor_name,
+//       supervisor_mobile,
+//       father_name
+//     } = req.body;
+//       // console.log("Creating new user with data:", req.body);
+//     const result = await pool.query(
+//       `SELECT public.sp_mb_create_new_user(
+//         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16
+//       )`,
+//       [
+//         full_name,
+//         mobile_number,
+//         password,
+//         role,
+//         type,
+//         email,
+//         area,
+//         address,
+//         pin_code,
+//         city,
+//         state,
+//         lat,
+//         long,
+//         supervisor_name,
+//         supervisor_mobile,
+//         father_name
+//       ]
+//     );
+//     // console.log("Create new user result:", result);
+//     return res.json(result.rows[0].sp_mb_create_new_user);
+
+//   } catch (error) {
+//     console.error("Create User Error:", error);
+//     return res.status(500).json({
+//       status: false,
+//       message: error
+//     });
+//   }
+// };
 
 const getMyMembers = async (req, res) => {
   try {
@@ -620,6 +677,32 @@ const getUserDetails = async (req, res) => {
   }
 };
 
+const getHistory = async (req, res) => {
+  try {
+    const { mobile_number } = req.body;
+
+    const { rows } = await pool.query(
+      `SELECT * FROM sp_mb_get_history_with_category($1)`,
+      [mobile_number]
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: "History fetched successfully",
+      data: rows,
+    });
+
+  } catch (error) {
+    console.error("Get History Error:", error);
+
+    return res.status(500).json({
+      status: false,
+      message: "Failed to fetch history",
+      error: error.message,
+    });
+  }
+};
+
 
 module.exports = {
   login,
@@ -640,7 +723,8 @@ module.exports = {
   generateInvoice,
   searchMembers,
   transferCoin,
-  getUserDetails
+  getUserDetails,
+  getHistory
 
 
 };
