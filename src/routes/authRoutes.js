@@ -26,7 +26,8 @@ const {
   getUserDetails,
   getHistory,
   createNotification,
-  savePushToken
+  savePushToken,
+  getNotifications
 } = require("../controllers/authController");
 
 router.post("/login", login);
@@ -51,6 +52,8 @@ router.post("/user-details", getUserDetails);
 router.post("/get-history", getHistory);
 router.post("/create", createNotification);
 router.post("/save-push-token", savePushToken);
+router.post("/notification/list", getNotifications);
+
 
 
 

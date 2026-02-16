@@ -710,8 +710,8 @@ const createNotification = async (req, res) => {
       title,
       message,
       notification_type,
-      target_type,    // ALL | USER
-      target_mobile,  // optional
+      target_type,
+      target_mobile,
     } = req.body;
 
     const { rows } = await pool.query(
@@ -721,24 +721,27 @@ const createNotification = async (req, res) => {
       VALUES ($1, $2, $3, $4, $5)
       RETURNING notification_id
       `,
-      [title, message, notification_type, target_type, target_mobile || null]
+      [
+        title,
+        message,
+        notification_type,
+        target_type || "ALL",
+        target_mobile || null,
+      ]
     );
 
-    const notificationId = rows[0].notification_id;
+    processNotification(rows[0].notification_id);
 
-    // 🔔 Fire & forget
-    processNotification(notificationId);
-
-    return res.status(201).json({
+    return res.json({
       success: true,
-      message: "Notification created",
+      message: "Notification sent",
     });
 
-  } catch (error) {
-    console.error("Create Notification Error:", error);
+  } catch (e) {
+    console.error("Create Notification Error:", e);
     return res.status(500).json({
       success: false,
-      message: "Failed to create notification",
+      message: "Failed to send notification",
     });
   }
 };
@@ -786,6 +789,44 @@ const savePushToken = async (req, res) => {
   }
 };
 
+const getNotifications = async (req, res) => {
+  try {
+    const { mobile_number } = req.body;
+
+    const { rows } = await pool.query(
+      `
+      SELECT
+        notification_id,
+        title,
+        message_template,
+        notification_type,
+        created_at
+      FROM tb_notification_master
+      WHERE is_active = true
+        AND (
+          target_type = 'ALL'
+          OR (target_type = 'USER' AND target_mobile = $1)
+        )
+      ORDER BY created_at DESC
+      `,
+      [mobile_number]
+    );
+
+    return res.json({
+      success: true,
+      data: rows,
+    });
+
+  } catch (error) {
+    console.error("Get Notification Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch notifications",
+    });
+  }
+};
+
+
 
 
 module.exports = {
@@ -810,7 +851,8 @@ module.exports = {
   getUserDetails,
   getHistory,
   createNotification,
-  savePushToken
+  savePushToken,
+  getNotifications
 
 
 };
