@@ -5,6 +5,7 @@
     "express": "^5.2.1",
     "firebase-admin": "^13.6.1",
     "fs": "^0.0.1-security",
+    "node-cron": "^4.2.1",
     "path": "^0.12.7",
     "pdfkit": "^0.17.2",
     "pg": "^8.18.0"

@@ -42,3 +42,5 @@ app.use("/api/auth", authRoutes);
 app.use("/invoices", express.static("invoices"));
 
 module.exports = app;
+
+

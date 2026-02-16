@@ -8,4 +8,26 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
+// const notificationRoutes = require("./src/routes/notification.routes");
+
+// app.use("/api", notificationRoutes);
+
+// const startNotificationListener =
+// require("./src/listeners/notification.listener");
+
+// require("./src/workers/notification.worker");
+
+// startNotificationListener();
+
+const startNotificationListener = require("./src/listeners/notification.listener");
+require("./src/workers/notification.worker");
+
+async function startServer() {
+
+  await startNotificationListener();
+
+  console.log("🚀 Notification system started...");
+}
+
+startServer();
 
