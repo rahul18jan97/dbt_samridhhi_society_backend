@@ -1,0 +1,8 @@
+# Firebase secrets
+src/config/firebase-service-account.json
+
+# Environment
+.env
+
+# Node
+node_modules
