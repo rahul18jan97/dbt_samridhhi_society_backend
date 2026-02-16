@@ -2,6 +2,7 @@
 
 const express = require("express");
 const router = express.Router();
+// const { savePushToken } = require("../controllers/authController");
 
 const {
   login,
@@ -23,7 +24,9 @@ const {
   searchMembers,
   transferCoin,
   getUserDetails,
-  getHistory
+  getHistory,
+  createNotification,
+  savePushToken
 } = require("../controllers/authController");
 
 router.post("/login", login);
@@ -46,6 +49,8 @@ router.post("/search-members", searchMembers);
 router.post("/transfer-coin", transferCoin);
 router.post("/user-details", getUserDetails);
 router.post("/get-history", getHistory);
+router.post("/create", createNotification);
+router.post("/save-push-token", savePushToken);
 
 
 

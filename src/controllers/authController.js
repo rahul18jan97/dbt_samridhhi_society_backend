@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const { generateInvoicePdf } = require("../utils/invoicePdf");
+const { processNotification } = require("../listeners/notification.listener");
 
 
 const generateInvoice = async (req, res) => {
@@ -703,6 +704,89 @@ const getHistory = async (req, res) => {
   }
 };
 
+const createNotification = async (req, res) => {
+  try {
+    const {
+      title,
+      message,
+      notification_type,
+      target_type,    // ALL | USER
+      target_mobile,  // optional
+    } = req.body;
+
+    const { rows } = await pool.query(
+      `
+      INSERT INTO tb_notification_master
+        (title, message_template, notification_type, target_type, target_mobile)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING notification_id
+      `,
+      [title, message, notification_type, target_type, target_mobile || null]
+    );
+
+    const notificationId = rows[0].notification_id;
+
+    // 🔔 Fire & forget
+    processNotification(notificationId);
+
+    return res.status(201).json({
+      success: true,
+      message: "Notification created",
+    });
+
+  } catch (error) {
+    console.error("Create Notification Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create notification",
+    });
+  }
+};
+
+const savePushToken = async (req, res) => {
+  try {
+    const {
+      mobile_number,
+      push_token,
+      device_type,
+      device_id,
+    } = req.body;
+      console.log("Save Push Token Request:", req.body);
+    if (!mobile_number || !push_token) {
+      return res.status(400).json({
+        success: false,
+        message: "mobile_number and push_token required",
+      });
+    }
+
+    await pool.query(
+      `
+      UPDATE tb_emp_login_auth
+      SET
+        push_token = $1,
+        device_type = $2,
+        device_id = $3,
+        updated_at = NOW()
+      WHERE mobile_number = $4
+      `,
+      [push_token, device_type, device_id, mobile_number]
+    );
+    console.log("Push token saved for mobile:", mobile_number);
+    return res.json({
+      success: true,
+      message: "Push token saved successfully",
+    });
+
+  } catch (error) {
+    console.error("Save Push Token Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to save push token",
+    });
+  }
+};
+
+
 
 module.exports = {
   login,
@@ -724,7 +808,9 @@ module.exports = {
   searchMembers,
   transferCoin,
   getUserDetails,
-  getHistory
+  getHistory,
+  createNotification,
+  savePushToken
 
 
 };
