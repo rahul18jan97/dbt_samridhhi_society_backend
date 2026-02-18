@@ -826,6 +826,124 @@ const getNotifications = async (req, res) => {
   }
 };
 
+const createLead = async (req, res) => {
+  try {
+    const {
+      name,
+      mobile_number,
+      lead_status,
+      meeting_datetime,
+      object_data,
+      location,
+      created_by,
+    } = req.body;
+
+    const { rows } = await pool.query(
+      `
+      SELECT sp_mb_lead_insert(
+        $1::varchar,
+        $2::varchar,
+        $3::varchar,
+        $4::timestamp,
+        $5::jsonb,
+        $6::jsonb,
+        $7::varchar
+      ) AS result
+      `,
+      [
+        name,
+        mobile_number,
+        lead_status,
+        meeting_datetime,
+        JSON.stringify(object_data),
+        JSON.stringify(location),
+        created_by,
+      ]
+    );
+
+    return res.status(200).json(rows[0].result);
+
+  } catch (error) {
+    console.error("Create Lead Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Lead creation failed",
+      error: error.message,
+    });
+  }
+};
+
+
+const viewLeadsByStatus = async (req, res) => {
+  try {
+    const { lead_status, created_by, search } = req.body;
+
+    const { rows } = await pool.query(
+      `SELECT * FROM sp_mb_leads_view($1, $2, $3)`,
+      [
+        lead_status,
+        created_by,
+        search || ""
+      ]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Leads fetched successfully",
+      data: rows || [],
+    });
+
+  } catch (err) {
+    console.error("View Leads Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch leads",
+      error: err.message,
+    });
+  }
+};
+
+
+const updateLead = async (req, res) => {
+  try {
+    const {
+      lead_id,
+      lead_status,
+      object_data,
+      meeting_datetime
+    } = req.body;
+
+    const result = await pool.query(
+      `
+      SELECT sp_mb_lead_update(
+        $1,
+        $2,
+        $3::jsonb,
+        $4::timestamp
+      ) AS result
+      `,
+      [
+        lead_id,
+        lead_status,
+        JSON.stringify(object_data),
+        meeting_datetime
+      ]
+    );
+
+    return res.json(result.rows[0].result);
+
+  } catch (err) {
+    console.error("UPDATE ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+
+
 
 
 
@@ -852,7 +970,10 @@ module.exports = {
   getHistory,
   createNotification,
   savePushToken,
-  getNotifications
+  getNotifications,
+  createLead,
+  viewLeadsByStatus,
+  updateLead
 
 
 };

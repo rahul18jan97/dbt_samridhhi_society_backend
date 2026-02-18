@@ -27,7 +27,10 @@ const {
   getHistory,
   createNotification,
   savePushToken,
-  getNotifications
+  getNotifications,
+  createLead,
+  viewLeadsByStatus,
+  updateLead
 } = require("../controllers/authController");
 
 router.post("/login", login);
@@ -53,6 +56,10 @@ router.post("/get-history", getHistory);
 router.post("/create", createNotification);
 router.post("/save-push-token", savePushToken);
 router.post("/notification/list", getNotifications);
+router.post("/create-lead", createLead);
+router.post("/view-leads", viewLeadsByStatus);
+router.post("/update-lead", updateLead);
+
 
 
 
