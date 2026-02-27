@@ -30,7 +30,16 @@ const {
   getNotifications,
   createLead,
   viewLeadsByStatus,
-  updateLead
+  updateLead,
+  createShopRequest,
+  viewShopsByStatus,
+  getPurchaseRequestApprove,
+  updatePurchaseRequestStatus,
+  cancelPurchase
+  // detectOperator,
+  // rechargeMobile,
+  // getRechargeStatus,
+  // getWalletBalance
 } = require("../controllers/authController");
 
 router.post("/login", login);
@@ -59,15 +68,15 @@ router.post("/notification/list", getNotifications);
 router.post("/create-lead", createLead);
 router.post("/view-leads", viewLeadsByStatus);
 router.post("/update-lead", updateLead);
-
-
-
-
-
-
-
-
-
+// router.post("/detect-operator", detectOperator);
+// router.post("/recharge/mobile", rechargeMobile);
+// router.get("/recharge/status/:recharge_id", getRechargeStatus);
+// router.get("/wallet/:user_id", getWalletBalance);
+router.post("/create-shop-request", createShopRequest);
+router.post("/view-shops", viewShopsByStatus);
+router.post("/purchase-request-approve", getPurchaseRequestApprove);
+router.post("/purchase-request-update-status", updatePurchaseRequestStatus);
+router.post("/cancel-purchase", cancelPurchase);
 
 
 module.exports = router;

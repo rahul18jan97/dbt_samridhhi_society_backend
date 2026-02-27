@@ -1,7 +1,8 @@
 const pool = require("../config/db");
+const axios = require("axios");
 const { generateInvoicePdf } = require("../utils/invoicePdf");
 const { processNotification } = require("../listeners/notification.listener");
-
+const rechargeService = require("../services/recharge.service");
 
 const generateInvoice = async (req, res) => {
   try {
@@ -45,20 +46,20 @@ module.exports.generateInvoice = generateInvoice;
 
 const login = async (req, res) => {
   try {
-    const { mobile, password } = req.body;
+    const { mobile, password, mpin } = req.body;
 // console.log("Login attempt:", { mobile, password: password ? "****" : null });
-    if (!mobile || !password) {
+    if (!mobile || !password  || !mpin) {
       return res.status(400).json({
         success: false,
-        message: "Mobile number and password are required"
+        message: "Mobile number, password, and mpin are required"
       });
     }
 
     const query = `
-      SELECT * FROM public.fn_login_auth_user($1, $2)
+      SELECT * FROM public.fn_login_auth_user($1, $2, $3)
     `;
 
-    const values = [mobile, password];
+    const values = [mobile, password, mpin];
 
     const { rows } = await pool.query(query, values);
 
@@ -564,6 +565,26 @@ const checkoutCart = async (req, res) => {
     });
   }
 };
+const cancelPurchase = async (req, res) => {
+  try {
+    const {
+      purchase_id 
+    } = req.body;
+
+    const { rows } = await pool.query(
+      `SELECT sp_mb_cancel_purchase($1) AS result`,
+      [purchase_id]
+    );
+
+    return res.json(rows[0].result);
+  } catch (error) {
+    console.error("Checkout Error:", error);
+    return res.status(500).json({
+      status: false,
+      message: error.message,
+    });
+  }
+};
 const getPurchaseHistory = async (req, res) => {
   try {
     const { mobile_number } = req.body;
@@ -942,8 +963,377 @@ const updateLead = async (req, res) => {
   }
 };
 
+const createShopRequest = async (req, res) => {
+  console.log("Create Shop Request:", req.body);
+  try {
+    const {
+      name,
+      mobile_number,
+      lead_status,
+      meeting_datetime,
+      object_data,
+      location,
+      created_by,
+    } = req.body;
+
+    const { rows } = await pool.query(
+      `
+      SELECT sp_mb_shop_insert(
+        $1::varchar,
+        $2::varchar,
+        $3::varchar,
+        $4::timestamp,
+        $5::jsonb,
+        $6::jsonb,
+        $7::varchar
+      ) AS result
+      `,
+      [
+        name,
+        mobile_number,
+        lead_status,
+        meeting_datetime,
+        JSON.stringify(object_data),
+        JSON.stringify(location),
+        created_by,
+      ]
+    );
+    console.log("Create Shop Result:", rows[0].result);
+    return res.status(200).json(rows[0].result);
+
+  } catch (error) {
+    console.error("Create Shop Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Shop request creation failed",
+      error: error.message,
+    });
+  }
+};
+
+const viewShopsByStatus = async (req, res) => {
+  try {
+    const { lead_status, created_by, search } = req.body;
+
+    const { rows } = await pool.query(
+      `SELECT * FROM sp_mb_shops_view($1, $2, $3)`,
+      [
+        lead_status,
+        created_by,
+        search || ""
+      ]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Shops fetched successfully",
+      data: rows || [],
+    });
+
+  } catch (err) {
+    console.error("View Shops Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch shops",
+      error: err.message,
+    });
+  }
+};
+const getPurchaseRequestApprove = async (req, res) => {
+  try {
+    const { mobile_number } = req.body;
+
+    const { rows } = await pool.query(
+      `SELECT * FROM sp_mb_purchase_request_approve($1)`,
+      [mobile_number]
+    );
+
+    return res.json({
+      status: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Purchase History Error:", error);
+    return res.status(500).json({
+      status: false,
+      message: error.message,
+    });
+  }
+};
+const updatePurchaseRequestStatus = async (req, res) => {
+  try {
+    const { mobile_number,purchase_id, status } = req.body;
+
+    const { rows } = await pool.query(
+      `SELECT * FROM sp_mb_purchase_request_update($1,$2,$3)`,
+      [mobile_number,purchase_id,status]
+    );
+
+    return res.json({
+      status: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Purchase History Error:", error);
+    return res.status(500).json({
+      status: false,
+      message: error.message,
+    });
+  }
+};
+// const detectOperator = async (req, res) => {
+//   // console.log("Detect Operator Request:", req.body);
+//   try {
+//     const { mobile } = req.body;
+
+//   if (!mobile || mobile.length !== 10) {
+//     return res.status(400).json({ success: false, message: "Invalid number" });
+//   }
+
+//   const prefix = mobile.substring(0, 2);
+
+//   let operator = "RJ";
+//   if (prefix === "97") operator = "RA";
+// // console.log("Detected operator:", operator);
+// // console.log("Detect Operator Response:", res)
+//   return res.json({
+//     success: true,
+//     data: {
+//       operator_code: operator,
+//       circle: "UP East"
+//     }
+//   });
+
+//   } catch (error) {
+//     console.error("Operator Detect Error:", error.response?.data || error.message);
+//     res.status(500).json({
+//       success: false,
+//       message: "Operator detection failed",
+//     });
+//   }
+// };
 
 
+
+// exports.detectOperator = async (req, res) => {
+//   const { mobile } = req.body;
+
+//   if (!mobile || mobile.length !== 10) {
+//     return res.status(400).json({ success: false, message: "Invalid number" });
+//   }
+
+//   const prefix = mobile.substring(0, 2);
+
+//   let operator = "RJ";
+//   if (prefix === "97") operator = "RA";
+
+//   return res.json({
+//     success: true,
+//     data: {
+//       operator_code: operator,
+//       circle: "UP East"
+//     }
+//   });
+// };
+
+// const rechargeMobile = async (req, res) => {
+//   try {
+//     const {
+//       user_id,
+//       mobile_number,
+//       operator_code,
+//       circle,
+//       amount
+//     } = req.body;
+
+//     // 1️⃣ Check Wallet Balance
+//     const walletCheck = await pool.query(
+//       `SELECT wallet_balance 
+//        FROM tb_recharge_wallet_master 
+//        WHERE user_id = $1`,
+//       [user_id]
+//     );
+
+//     if (walletCheck.rowCount === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Wallet not found"
+//       });
+//     }
+
+//     const balance = walletCheck.rows[0].wallet_balance;
+
+//     if (parseFloat(balance) < parseFloat(amount)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Insufficient wallet balance"
+//       });
+//     }
+
+//     // 2️⃣ Create Recharge Entry
+//     const rechargeResult = await pool.query(
+//       `
+//       SELECT sp_mb_recharge_create(
+//         $1,$2,$3,$4,$5
+//       ) AS result
+//       `,
+//       [
+//         user_id,
+//         mobile_number,
+//         operator_code,
+//         circle,
+//         amount
+//       ]
+//     );
+
+//     const rechargeData = rechargeResult.rows[0].result;
+
+//     if (!rechargeData.success) {
+//       return res.status(400).json(rechargeData);
+//     }
+
+//     const recharge_id = rechargeData.recharge_id;
+
+//     // 3️⃣ Debit Wallet
+//     await pool.query(
+//       `
+//       SELECT sp_mb_wallet_debit(
+//         $1,$2,$3,$4
+//       )
+//       `,
+//       [
+//         user_id,
+//         amount,
+//         recharge_id,
+//         'Mobile Recharge'
+//       ]
+//     );
+
+//     // 4️⃣ Simulate Aggregator Response (DUMMY MODE)
+//     const aggregatorResponse = {
+//       status: "SUCCESS", // SUCCESS | FAILED | PENDING
+//       operator_txn_id: "OP" + Date.now()
+//     };
+// // for production, replace above dummy response with actual API call to aggregator like PaySprint using axios or any HTTP client
+
+// //     const axios = require('axios');
+
+// // const paySprintResponse = await axios.post(
+// //   PAYSPRINT_URL,
+// //   requestBody,
+// //   { headers: {...} }
+// // );
+
+//     // 5️⃣ Update Recharge Status
+//     await pool.query(
+//       `
+//       SELECT sp_mb_recharge_update_status(
+//         $1,$2,$3
+//       )
+//       `,
+//       [
+//         recharge_id,
+//         aggregatorResponse.status,
+//         aggregatorResponse.operator_txn_id
+//       ]
+//     );
+
+//     // 6️⃣ If Success → Give Cashback
+//     if (aggregatorResponse.status === "SUCCESS") {
+
+//       const cashbackAmount = (amount * 2) / 100; // 2% cashback example
+
+//       await pool.query(
+//         `
+//         SELECT sp_mb_cashback_credit(
+//           $1,$2,$3,$4
+//         )
+//         `,
+//         [
+//           user_id,
+//           cashbackAmount,
+//           recharge_id,
+//           'Recharge Cashback'
+//         ]
+//       );
+//     }
+
+//     return res.json({
+//       success: true,
+//       message: "Recharge processed successfully",
+//       recharge_id: recharge_id
+//     });
+
+//   } catch (err) {
+//     console.error("RECHARGE ERROR:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: err.message
+//     });
+//   }
+// };
+// const getRechargeStatus = async (req, res) => {
+//   try {
+
+//     const { recharge_id } = req.params;
+
+//     const result = await pool.query(
+//       `
+//       SELECT * FROM tb_recharge_master
+//       WHERE recharge_id = $1
+//       `,
+//       [recharge_id]
+//     );
+
+//     if (result.rowCount === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Recharge not found"
+//       });
+//     }
+
+//     return res.json({
+//       success: true,
+//       data: result.rows[0]
+//     });
+
+//   } catch (err) {
+//     console.error("STATUS ERROR:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: err.message
+//     });
+//   }
+// };
+
+// const getWalletBalance = async (req, res) => {
+//   try {
+
+//     const { user_id } = req.params;
+
+//     const result = await pool.query(
+//       `
+//       SELECT wallet_balance 
+//       FROM tb_recharge_wallet_master
+//       WHERE user_id = $1
+//       `,
+//       [user_id]
+//     );
+
+//     return res.json({
+//       success: true,
+//       balance: result.rows[0]?.wallet_balance || 0
+//     });
+
+//   } catch (err) {
+//     console.error("WALLET ERROR:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: err.message
+//     });
+//   }
+// };
 
 
 
@@ -973,7 +1363,15 @@ module.exports = {
   getNotifications,
   createLead,
   viewLeadsByStatus,
-  updateLead
-
+  updateLead,
+  createShopRequest,
+  viewShopsByStatus,
+  getPurchaseRequestApprove,
+  updatePurchaseRequestStatus,
+  cancelPurchase
+  // detectOperator,
+  // rechargeMobile,
+  // getRechargeStatus,
+  // getWalletBalance
 
 };
